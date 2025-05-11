@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Счётчик кликов в Telegram Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    button {
+      font-size: 20px;
+      padding: 10px 30px;
+      cursor: pointer;
+    }
+    #count {
+      margin-top: 15px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Счётчик кликов</h1>
+  <button id="clickBtn">Кликни меня!</button>
+  <div id="count">Кликов: 0</div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let count = 0;
+    const btn = document.getElementById('clickBtn');
+    const countDiv = document.getElementById('count');
+
+    btn.addEventListener('click', () => {
+      count++;
+      countDiv.textContent = `Кликов: ${count}`;
+    });
+  </script>
+</body>
+</html>
