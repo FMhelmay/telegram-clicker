@@ -3,43 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Счётчик кликов в Telegram Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>Сетка с текстурой</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      text-align: center;
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
-    button {
-      font-size: 20px;
-      padding: 10px 30px;
-      cursor: pointer;
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 64px);
+      grid-auto-rows: 64px;
+      width: 512px; /* например 8 колонок */
+      height: 512px; /* например 8 строк */
+      gap: 0;
     }
-    #count {
-      margin-top: 15px;
-      font-size: 24px;
-      font-weight: bold;
+    .cell {
+      width: 64px;
+      height: 64px;
+      background-image: url('Спрайт-0013.png');
+      background-size: cover;
+      background-repeat: no-repeat;
     }
   </style>
 </head>
 <body>
-  <h1>Счётчик кликов</h1>
-  <button id="clickBtn">Кликни меня!</button>
-  <div id="count">Кликов: 0</div>
+  <div id="grid"></div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    const grid = document.getElementById('grid');
+    const rows = 8;  // количество строк
+    const cols = 8;  // количество колонок
 
-    let count = 0;
-    const btn = document.getElementById('clickBtn');
-    const countDiv = document.getElementById('count');
-
-    btn.addEventListener('click', () => {
-      count++;
-      countDiv.textContent = `Кликов: ${count}`;
-    });
+    for(let i = 0; i < rows * cols; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      grid.appendChild(cell);
+    }
   </script>
 </body>
 </html>
