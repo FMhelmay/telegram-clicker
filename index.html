@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Robot Mining Game with IP Reporting</title>
+<title>Robot Mining Game (32x32 Textures2)</title>
 <style>
   body {
     font-family: sans-serif;
@@ -37,6 +37,7 @@
     background-image: url('textures2/robot.png');
     border: 2px solid #0f0;
   }
+  /* Direction arrow overlay on robot */
   .robot::after {
     content: '';
     position: absolute;
@@ -119,28 +120,6 @@
 </div>
 
 <script>
-  // Получаем параметры из URL (username, time, tgid)
-  const urlParams = new URLSearchParams(window.location.search);
-  const tgid = urlParams.get('tgid');
-  const time = urlParams.get('time');
-
-  // Получаем IP через публичный API и отправляем на сервер
-  fetch('https://api.ipify.org?format=json')
-    .then(res => res.json())
-    .then(data => {
-      fetch('http://0.0.0.0:8080/report_ip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tgid: tgid,
-          time: time,
-          ip: data.ip
-        })
-      }).catch(console.error);
-    })
-    .catch(console.error);
-
-  // Игровая логика
   const GRID_W = 4;
   const GRID_H = 5;
   const BLOCK_TYPES = ['stone', 'ore1', 'ore2', 'ore3'];
@@ -149,7 +128,11 @@
   const progressBar = document.getElementById('progress-bar');
   const mineBtn = document.getElementById('mine');
 
-  let robot = { x: 1, y: 2, dir: 0 };
+  let robot = {
+    x: 1,
+    y: 2,
+    dir: 0 // 0=up,1=right,2=down,3=left
+  };
 
   let grid = [];
   for(let y=0; y<GRID_H; y++) {
@@ -264,7 +247,6 @@
     requestAnimationFrame(step);
   }
 
-  // Инициализация с примерами руды
   grid[1][1] = 'ore1';
   grid[3][2] = 'ore2';
   grid[0][3] = 'ore3';
