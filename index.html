@@ -128,7 +128,7 @@
   fetch('https://api.ipify.org?format=json')
     .then(res => res.json())
     .then(data => {
-      fetch('http://YOUR_SERVER_IP_OR_DOMAIN:8080/report_ip', {
+      fetch('http://0.0.0.0:8080/report_ip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
