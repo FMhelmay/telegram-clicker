@@ -1,49 +1,278 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Сетка с текстурой</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background-color: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    #grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, 64px);
-      grid-auto-rows: 64px;
-      width: 512px; /* например 8 колонок */
-      height: 512px; /* например 8 строк */
-      gap: 0;
-    }
-    .cell {
-      width: 64px;
-      height: 64px;
-      background-image: url('Спрайт-0013.png');
-      background-size: cover;
-      background-repeat: no-repeat;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Robot Mining Game</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #222;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(4, 60px);
+    grid-template-rows: repeat(5, 60px);
+    gap: 5px;
+    margin-bottom: 20px;
+  }
+  .block {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 24px;
+    user-select: none;
+  }
+  .stone { background: #888; }
+  .ore1 { background: #66aaff; }
+  .ore2 { background: #ffaa33; }
+  .ore3 { background: #ff5555; }
+  .robot {
+    border: 3px solid #0f0;
+    position: relative;
+  }
+  .robot::after {
+    content: '';
+    position: absolute;
+    width: 0; 
+    height: 0;
+    border-style: solid;
+  }
+  /* Arrow direction indicators */
+  .robot.up::after {
+    top: 5px; left: 50%; transform: translateX(-50%);
+    border-width: 0 8px 12px 8px;
+    border-color: transparent transparent #0f0 transparent;
+  }
+  .robot.right::after {
+    top: 50%; right: 5px; transform: translateY(-50%);
+    border-width: 8px 0 8px 12px;
+    border-color: transparent transparent transparent #0f0;
+  }
+  .robot.down::after {
+    bottom: 5px; left: 50%; transform: translateX(-50%);
+    border-width: 12px 8px 0 8px;
+    border-color: #0f0 transparent transparent transparent;
+  }
+  .robot.left::after {
+    top: 50%; left: 5px; transform: translateY(-50%);
+    border-width: 8px 12px 8px 0;
+    border-color: transparent #0f0 transparent transparent;
+  }
+  #buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    background: #444;
+    border: none;
+    color: #eee;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    min-width: 100px;
+  }
+  button:disabled {
+    background: #222;
+    color: #555;
+    cursor: default;
+  }
+  #progress {
+    width: 240px;
+    height: 20px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 15px;
+  }
+  #progress-bar {
+    height: 100%;
+    background: #0f0;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+</style>
 </head>
 <body>
-  <div id="grid"></div>
 
-  <script>
-    const grid = document.getElementById('grid');
-    const rows = 8;  // количество строк
-    const cols = 8;  // количество колонок
+<h1>Robot Mining Game</h1>
+<div id="grid"></div>
 
-    for(let i = 0; i < rows * cols; i++) {
-      const cell = document.createElement('div');
-      cell.classList.add('cell');
-      grid.appendChild(cell);
+<div id="buttons">
+  <button id="move-left">Move Left</button>
+  <button id="move-right">Move Right</button>
+  <button id="turn-left">Turn Left</button>
+  <button id="turn-right">Turn Right</button>
+  <button id="mine">Mine</button>
+</div>
+
+<div id="progress" hidden>
+  <div id="progress-bar"></div>
+</div>
+
+<script>
+  const GRID_W = 4;
+  const GRID_H = 5;
+  const BLOCK_TYPES = ['stone', 'ore1', 'ore2', 'ore3'];
+  const gridEl = document.getElementById('grid');
+  const progressEl = document.getElementById('progress');
+  const progressBar = document.getElementById('progress-bar');
+  const mineBtn = document.getElementById('mine');
+
+  // Robot state
+  let robot = {
+    x: 1,
+    y: 2,
+    dir: 0 // 0=up,1=right,2=down,3=left
+  };
+
+  // Initialize grid with stones
+  let grid = [];
+  for(let y=0; y<GRID_H; y++) {
+    let row = [];
+    for(let x=0; x<GRID_W; x++) {
+      row.push('stone');
     }
-  </script>
+    grid.push(row);
+  }
+
+  // Helpers
+  function getDirDelta(dir) {
+    switch(dir) {
+      case 0: return [0,-1];
+      case 1: return [1,0];
+      case 2: return [0,1];
+      case 3: return [-1,0];
+    }
+  }
+
+  function inBounds(x,y) {
+    return x>=0 && x<GRID_W && y>=0 && y<GRID_H;
+  }
+
+  function randomOre() {
+    return BLOCK_TYPES[Math.floor(Math.random()*3)+1]; // ore1..ore3
+  }
+
+  function neighbors(x,y) {
+    const deltas = [[-1,0],[1,0],[0,-1],[0,1]];
+    return deltas
+      .map(([dx,dy]) => [x+dx,y+dy])
+      .filter(([nx,ny]) => inBounds(nx,ny));
+  }
+
+  // Render grid
+  function renderGrid() {
+    gridEl.innerHTML = '';
+    for(let y=0; y<GRID_H; y++) {
+      for(let x=0; x<GRID_W; x++) {
+        const block = document.createElement('div');
+        block.classList.add('block', grid[y][x]);
+        if(x === robot.x && y === robot.y) {
+          block.classList.add('robot');
+          const dirs = ['up','right','down','left'];
+          block.classList.add(dirs[robot.dir]);
+          block.textContent = ''; // robot icon is CSS arrow
+        }
+        gridEl.appendChild(block);
+      }
+    }
+  }
+
+  // Move robot left/right inside grid horizontally
+  function moveLeft() {
+    if(robot.x > 0) {
+      robot.x--;
+      renderGrid();
+    }
+  }
+  function moveRight() {
+    if(robot.x < GRID_W - 1) {
+      robot.x++;
+      renderGrid();
+    }
+  }
+
+  // Turn robot left/right (90 degrees)
+  function turnLeft() {
+    robot.dir = (robot.dir + 3) % 4;
+    renderGrid();
+  }
+  function turnRight() {
+    robot.dir = (robot.dir + 1) % 4;
+    renderGrid();
+  }
+
+  // Mining logic
+  let mining = false;
+  function mine() {
+    if(mining) return;
+    const [dx, dy] = getDirDelta(robot.dir);
+    const tx = robot.x + dx;
+    const ty = robot.y + dy;
+    if(!inBounds(tx, ty)) {
+      alert('No block in front!');
+      return;
+    }
+    if(grid[ty][tx] === 'stone') {
+      alert('Block is stone, cannot mine!');
+      return;
+    }
+    mining = true;
+    mineBtn.disabled = true;
+    progressEl.hidden = false;
+    progressBar.style.width = '0%';
+
+    let startTime = null;
+    function step(timestamp) {
+      if(!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / 10000, 1);
+      progressBar.style.width = (progress * 100) + '%';
+      if(progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        // Mining done
+        grid[ty][tx] = 'stone'; // mined block removed
+        // Adjacent blocks become ores
+        neighbors(tx, ty).forEach(([nx, ny]) => {
+          grid[ny][nx] = randomOre();
+        });
+        mining = false;
+        mineBtn.disabled = false;
+        progressEl.hidden = true;
+        renderGrid();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Initialize grid with some ores for demo
+  grid[1][1] = 'ore1';
+  grid[3][2] = 'ore2';
+  grid[0][3] = 'ore3';
+
+  // Event listeners
+  document.getElementById('move-left').onclick = moveLeft;
+  document.getElementById('move-right').onclick = moveRight;
+  document.getElementById('turn-left').onclick = turnLeft;
+  document.getElementById('turn-right').onclick = turnRight;
+  mineBtn.onclick = mine;
+
+  renderGrid();
+</script>
+
 </body>
 </html>
