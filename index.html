@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Robot Mining Game</title>
+<title>Robot Mining Game (32x32 Textures2)</title>
 <style>
   body {
     font-family: sans-serif;
@@ -13,33 +13,31 @@
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    }
-    #grid {
+  }
+  #grid {
+    display: grid;
     grid-template-columns: repeat(4, 32px);
     grid-template-rows: repeat(5, 32px);
     gap: 4px;
-  }
     margin-bottom: 20px;
   }
   .block {
-    width: 60px;
-    height: 60px;
-    border-radius: 6px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    background-size: cover;
+    border-radius: 4px;
     user-select: none;
-  }
-  .stone { background: #888; }
-  .ore1 { background: #66aaff; }
-  .ore2 { background: #ffaa33; }
-  .ore3 { background: #ff5555; }
-  .robot {
-    border: 3px solid #0f0;
     position: relative;
   }
+  .stone { background-image: url('textures2/stone.png'); }
+  .ore1 { background-image: url('textures2/ore1.png'); }
+  .ore2 { background-image: url('textures2/ore2.png'); }
+  .ore3 { background-image: url('textures2/ore3.png'); }
+  .robot {
+    background-image: url('textures2/robot.png');
+    border: 2px solid #0f0;
+  }
+  /* Direction arrow overlay on robot */
   .robot::after {
     content: '';
     position: absolute;
@@ -47,25 +45,24 @@
     height: 0;
     border-style: solid;
   }
-  /* Arrow direction indicators */
   .robot.up::after {
-    top: 5px; left: 50%; transform: translateX(-50%);
-    border-width: 0 8px 12px 8px;
+    top: 4px; left: 50%; transform: translateX(-50%);
+    border-width: 0 6px 9px 6px;
     border-color: transparent transparent #0f0 transparent;
   }
   .robot.right::after {
-    top: 50%; right: 5px; transform: translateY(-50%);
-    border-width: 8px 0 8px 12px;
+    top: 50%; right: 4px; transform: translateY(-50%);
+    border-width: 6px 0 6px 9px;
     border-color: transparent transparent transparent #0f0;
   }
   .robot.down::after {
-    bottom: 5px; left: 50%; transform: translateX(-50%);
-    border-width: 12px 8px 0 8px;
+    bottom: 4px; left: 50%; transform: translateX(-50%);
+    border-width: 9px 6px 0 6px;
     border-color: #0f0 transparent transparent transparent;
   }
   .robot.left::after {
-    top: 50%; left: 5px; transform: translateY(-50%);
-    border-width: 8px 12px 8px 0;
+    top: 50%; left: 4px; transform: translateY(-50%);
+    border-width: 6px 9px 6px 0;
     border-color: transparent #0f0 transparent transparent;
   }
   #buttons {
@@ -78,11 +75,11 @@
     background: #444;
     border: none;
     color: #eee;
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
-    min-width: 100px;
+    min-width: 90px;
   }
   button:disabled {
     background: #222;
@@ -90,10 +87,10 @@
     cursor: default;
   }
   #progress {
-    width: 240px;
-    height: 20px;
+    width: 160px;
+    height: 16px;
     background: #333;
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     margin-top: 15px;
   }
@@ -131,14 +128,12 @@
   const progressBar = document.getElementById('progress-bar');
   const mineBtn = document.getElementById('mine');
 
-  // Robot state
   let robot = {
     x: 1,
     y: 2,
     dir: 0 // 0=up,1=right,2=down,3=left
   };
 
-  // Initialize grid with stones
   let grid = [];
   for(let y=0; y<GRID_H; y++) {
     let row = [];
@@ -148,7 +143,6 @@
     grid.push(row);
   }
 
-  // Helpers
   function getDirDelta(dir) {
     switch(dir) {
       case 0: return [0,-1];
@@ -163,7 +157,7 @@
   }
 
   function randomOre() {
-    return BLOCK_TYPES[Math.floor(Math.random()*3)+1]; // ore1..ore3
+    return BLOCK_TYPES[Math.floor(Math.random()*3)+1];
   }
 
   function neighbors(x,y) {
@@ -173,7 +167,6 @@
       .filter(([nx,ny]) => inBounds(nx,ny));
   }
 
-  // Render grid
   function renderGrid() {
     gridEl.innerHTML = '';
     for(let y=0; y<GRID_H; y++) {
@@ -184,14 +177,13 @@
           block.classList.add('robot');
           const dirs = ['up','right','down','left'];
           block.classList.add(dirs[robot.dir]);
-          block.textContent = ''; // robot icon is CSS arrow
+          block.textContent = '';
         }
         gridEl.appendChild(block);
       }
     }
   }
 
-  // Move robot left/right inside grid horizontally
   function moveLeft() {
     if(robot.x > 0) {
       robot.x--;
@@ -205,7 +197,6 @@
     }
   }
 
-  // Turn robot left/right (90 degrees)
   function turnLeft() {
     robot.dir = (robot.dir + 3) % 4;
     renderGrid();
@@ -215,7 +206,6 @@
     renderGrid();
   }
 
-  // Mining logic
   let mining = false;
   function mine() {
     if(mining) return;
@@ -244,9 +234,7 @@
       if(progress < 1) {
         requestAnimationFrame(step);
       } else {
-        // Mining done
-        grid[ty][tx] = 'stone'; // mined block removed
-        // Adjacent blocks become ores
+        grid[ty][tx] = 'stone';
         neighbors(tx, ty).forEach(([nx, ny]) => {
           grid[ny][nx] = randomOre();
         });
@@ -259,12 +247,10 @@
     requestAnimationFrame(step);
   }
 
-  // Initialize grid with some ores for demo
   grid[1][1] = 'ore1';
   grid[3][2] = 'ore2';
   grid[0][3] = 'ore3';
 
-  // Event listeners
   document.getElementById('move-left').onclick = moveLeft;
   document.getElementById('move-right').onclick = moveRight;
   document.getElementById('turn-left').onclick = turnLeft;
