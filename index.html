@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Robot Mining Game (32x32 Textures2)</title>
+<title>Robot Mining Game with IP, TG Username and Time</title>
 <style>
   body {
     font-family: sans-serif;
@@ -37,7 +37,6 @@
     background-image: url('textures2/robot.png');
     border: 2px solid #0f0;
   }
-  /* Direction arrow overlay on robot */
   .robot::after {
     content: '';
     position: absolute;
@@ -100,6 +99,13 @@
     width: 0%;
     transition: width 0.1s linear;
   }
+  #info {
+    margin-top: 20px;
+    font-size: 14px;
+    text-align: center;
+    max-width: 320px;
+    word-wrap: break-word;
+  }
 </style>
 </head>
 <body>
@@ -119,7 +125,44 @@
   <div id="progress-bar"></div>
 </div>
 
+<div id="info">
+  <div><b>Telegram Username:</b> <span id="tg-username">loading...</span></div>
+  <div><b>Current Time (UTC):</b> <span id="current-time">loading...</span></div>
+  <div><b>Your IP:</b> <span id="user-ip">loading...</span></div>
+</div>
+
 <script>
+  // === Получение параметров из URL (username и время из бота) ===
+  function getQueryParams() {
+    const params = {};
+    location.search.substring(1).split("&").forEach(pair => {
+      const [key, value] = pair.split("=");
+      if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+    });
+    return params;
+  }
+
+  const params = getQueryParams();
+  const tgUsernameEl = document.getElementById('tg-username');
+  const currentTimeEl = document.getElementById('current-time');
+  const userIpEl = document.getElementById('user-ip');
+
+  tgUsernameEl.textContent = params.username || 'Неизвестно';
+  currentTimeEl.textContent = params.time ? new Date(params.time).toUTCString() : 'Неизвестно';
+
+  // === Получение IP через публичный API ===
+  fetch('https://api.ipify.org?format=json')
+    .then(response => response.json())
+    .then(data => {
+      userIpEl.textContent = data.ip;
+      console.log(`TIME: ${params.time || 'unknown'} TGID: ${params.username || 'unknown'} IP: ${data.ip}`);
+    })
+    .catch(() => {
+      userIpEl.textContent = 'Не удалось получить IP';
+      console.log(`TIME: ${params.time || 'unknown'} TGID: ${params.username || 'unknown'} IP: unknown`);
+    });
+
+  // === Игровая логика ===
   const GRID_W = 4;
   const GRID_H = 5;
   const BLOCK_TYPES = ['stone', 'ore1', 'ore2', 'ore3'];
@@ -247,6 +290,7 @@
     requestAnimationFrame(step);
   }
 
+  // Инициализация с примерами руды
   grid[1][1] = 'ore1';
   grid[3][2] = 'ore2';
   grid[0][3] = 'ore3';
